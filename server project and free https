@@ -1,0 +1,36 @@
+free ssl https://certbot.eff.org/instructions?ws=nginx&os=ubuntufocal
+
+https://michal.karzynski.pl/blog/2013/06/09/django-nginx-gunicorn-virtualenv-supervisor/
+
+sudo apt install postgresql postgresql-contrib libpq-dev python3-dev supervisor
+sudo groupadd --system webapps
+sudo useradd --system --gid webapps --shell /bin/bash --home /webapps/dingi dingi
+sudo apt install python3-virtualenv
+sudo mkdir -p /webapps/dingi
+sudo chown dingi /webapps/dingi
+sudo chown -R dingi:users /webapps/dingi
+sudo chmod -R g+w /webapps/dingi
+
+sudo su - dingi
+virtualenv .
+source bin/activate
+pip install django djangorestframework djangorestframework-simplejwt django-cors-headers django-filter django-currentuser python-dotenv celery pillow django-import-export psycopg2-binary fcm-django gunicorn setproctitle
+touch bin/gunicorn_start
+mkdir -p /webapps/dingi/logs/
+touch /webapps/dingi/logs/gunicorn_supervisor.log
+
+exit
+
+
+sudo chmod u+x /webapps/dingi/bin/gunicorn_start
+sudo touch /etc/supervisor/conf.d/dingi.conf
+sudo mkdir -p /webapps/dingi/logs/
+
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo supervisorctl status dingi
+
+sudo apt install nginx
+sudo touch /etc/nginx/sites-available/dingi
+
+sudo ln -s /etc/nginx/sites-available/dingi /etc/nginx/sites-enabled/dingi

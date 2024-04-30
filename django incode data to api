@@ -1,0 +1,69 @@
+path('2/token', MyTokenObtainPairView.as_view()),
+
+class MyTokenObtainPairView(TokenObtainPairView):
+    permission_classes = (AllowAny,)
+    serializer_class = MyTokenObtainPairSerializer
+
+
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+
+    def get_token(cls, user):
+        token = super().get_token(user)
+        # Add custom claims
+
+        staff = Staff.objects.get(user=user)
+
+        token['username'] = user.username
+        from authentication.api.models import PasswordManager
+        token['change_password'] = PasswordManager.objects.filter(user=user).count()
+        token['route'] = 'staffProfile' if staff.role.name != 'Admin' else 'adminProfile'
+        token['user_group'] = staff.role.name
+        try:
+            token['dp'] = staff.dp.url
+        except Exception as e:
+            token['dp'] = ''
+        token['office_id'] = staff.office_id
+        # token['companies'] = companies
+
+        permissions = []
+        try:
+            for p in staff.role.majukumu.all():
+                permissions.append(p.name)
+            token['permissions'] = permissions
+        except Exception as e:
+            pass
+
+        try:
+            dt = cls.context['request'].data
+
+            accuracy = dt['accuracy']
+            latitude = dt['latitude']
+            longitude = dt['longitude']
+            provider = dt['provider']
+
+            device_id = dt['device_id']
+            manufacturer = dt['manufacturer']
+            model = dt['model']
+            os = dt['os']
+            email = dt['email']
+
+            staff = StaffLocation(
+                staff=Staff.objects.get(user__username=user.username),
+                geom=f'POINT({longitude} {latitude})',
+                provider=provider,
+                latitude=latitude,
+                longitude=longitude,
+                accuracy=accuracy,
+                device_id=device_id,
+                manufacturer=manufacturer,
+                model=model,
+                os=os,
+                created_by=user,
+                email=email
+            )
+            staff.save()
+        except Exception as e:
+            print(e)
+            pass
+
+        return token

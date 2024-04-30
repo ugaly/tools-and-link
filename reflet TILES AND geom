@@ -1,0 +1,64 @@
+https://leaflet-extras.github.io/leaflet-providers/preview/
+
+from django.contrib.gis.db.models import GeometryField
+geom = GeometryField(srid=4326)
+
+PointField()
+PolygonField()
+geom='POINT({} {})'.format(dt['lng'], dt['lat']),
+
+
+class UserDevice(models.Model):
+    class Meta:
+        db_table = 'tb_user_device'
+
+    sys_user = models.ForeignKey('mf_manage.SystemUser', on_delete=models.CASCADE)
+    imei = models.CharField(max_length=50)
+    email = models.CharField(max_length=100)
+    net_info = models.CharField(max_length=100)
+    model = models.CharField(max_length=100)
+    active = models.BooleanField(default=True)
+    office = models.ForeignKey('mf_core.Office', on_delete=models.CASCADE, null=True)
+    company = models.ForeignKey('mf_core.Company', on_delete=models.CASCADE, null=True)
+    created_date = models.DateField(auto_now_add=True)
+    created_time = models.TimeField(auto_now_add=True)
+    last_update_date = models.DateField(auto_now=True)
+    last_update_time = models.TimeField(auto_now=True)
+    created_by = models.CharField(max_length=100, null=True, blank=True)
+
+    geom = GeometryField(srid=4326)
+
+
+device = UserDevice(
+                    sys_user=sys_user,
+                    imei=dt['imei'],
+                    email=dt['email'],
+                    model=dt['model'],
+                    net_info=dt['netInfo'],
+                    office=sys_user.office,
+                    company=sys_user.office.company,
+                    geom='POINT({} {})'.format(dt['lng'], dt['lat']),
+                )
+                device.save()
+
+
+for d in UserDevice.objects.filter(office__in=sys.branches.all()).order_by('sys_user', '-id').distinct(
+                'sys_user'):
+
+
+            geom = GEOSGeometry(d.geom)
+
+            # Extract latitude and longitude from the geometry
+            latitude = geom.y  # Latitude corresponds to the 'y' coordinate
+            longitude = geom.x  # Longitude corresponds to the 'x' coordinate
+
+            qs.append({
+                'id': d.id,
+                'name': d.sys_user.user.username,
+                'latitude': latitude,
+                'longitude': longitude,
+                'muda': d.muda(),
+                'model': d.model,
+                'distance': '0 KM'
+            })
+
