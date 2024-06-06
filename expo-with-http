@@ -1,0 +1,99 @@
+{
+  "expo": {
+    "name": "POS",
+    "slug": "rn-soft-ui-kit",
+    "description": "React Native - Soft UI Kit",
+    "primaryColor": "#CB0C9F",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#CB0C9F"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true,
+          "NSExceptionDomains": {
+            "yourdomain.com": {
+              "NSTemporaryExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            }
+          }
+        }
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#CB0C9F"
+      },
+      "package": "com.ugaly.pos",
+      "versionCode": 1,
+      "permissions": [],
+      "usesCleartextTraffic": true
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
+    }
+  }
+}
+
+
+
+
+
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">yourdomain.com</domain>
+    </domain-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">anotherdomain.com</domain>
+    </domain-config>
+    <!-- Allow all domains. Only recommended during development. Remove before production. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+    </domain-config>
+</network-security-config>
+
+
+
+
+
+
+
+<application
+    android:name=".MainApplication"
+    android:label="@string/app_name"
+    android:icon="@mipmap/ic_launcher"
+    android:roundIcon="@mipmap/ic_launcher_round"
+    android:supportsRtl="true"
+    android:allowBackup="true"
+    android:theme="@style/AppTheme"
+    android:networkSecurityConfig="@xml/network_security_config">
+    ...
+</application>
+
+
+
+
+
+
+npx expo prebuild --clean
+eas build -p android --profile production
+npm install -g eas-cli
