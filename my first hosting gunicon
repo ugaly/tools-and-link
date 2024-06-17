@@ -103,6 +103,33 @@ sudo service nginx restart
 sudo service supervisor restart
 
 
+-------------collectind static--------------------
+cd /media/moja
+mkdir demo2
+sudo chmod 777 demo 2
+
+
+add to nginix
+sudo nano /etc/nginx.site-available/demoe
+
+  location /static/ {
+
+        alias  /media/moja/demo2/static/;
+
+    }
+
+
+
+    location /media/ {
+
+        alias   /media/moja/demo2/media/;
+
+    }
+
+
+..............................................
+
+
 
 full link
 https://michal.karzynski.pl/blog/2013/06/09/django-nginx-gunicorn-virtualenv-supervisor/
