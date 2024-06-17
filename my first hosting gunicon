@@ -1,0 +1,108 @@
+sudo groupadd --system webapps
+sudo useradd --system --gid webapps --shell /bin/bash --home /webapps/django_project user (often use same name for django project and user to avoid kuchanganya)
+sudo apt install python3-virtualenv
+sudo mkdir -p /webapps/hello_django/
+sudo chown hello /webapps/hello_django/
+ sudo su - hello
+ cd /webapps/hello_django/
+  virtualenv .
+  source bin/activate
+  pip install django
+(then install requirement and test if project is running correctly)
+exit
+sudo chown -R hello:users /webapps/hello_django
+sudo chmod -R g+w /webapps/hello_django
+sudo apt install libpq-dev python3-dev
+ sudo su - hello
+source bin/activate
+pip install gunicorn
+cd hellow(django project)
+gunicorn hello.wsgi:application --bind example.com:8001
+cd ..
+nano bin/gunicorn_start
+
+#!/bin/bash
+
+NAME="demo2_app"                                  # Name of the application
+DJANGODIR=/webapps/demo2/demo2             # Django project directory
+SOCKFILE=/webapps/demo2/run/gunicorn.sock  # we will communicte using this unix socket
+USER=demo2                                        # the user to run as
+GROUP=webapps                                     # the group to run as
+NUM_WORKERS=3                                     # how many worker processes should Gunicorn spawn
+DJANGO_SETTINGS_MODULE=demo2.settings             # which settings file should Django use
+DJANGO_WSGI_MODULE=demo2.wsgi                     # WSGI module name
+
+echo "Starting $NAME as `whoami`"
+
+# Activate the virtual environment
+cd $DJANGODIR
+source ../bin/activate
+export DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE
+export PYTHONPATH=$DJANGODIR:$PYTHONPATH
+
+# Create the run directory if it doesn't exist
+RUNDIR=$(dirname $SOCKFILE)
+test -d $RUNDIR || mkdir -p $RUNDIR
+
+# Start your Django Unicorn
+# Programs meant to be run under supervisor should not daemonize themselves (do not use --daemon)
+exec ../bin/gunicorn ${DJANGO_WSGI_MODULE}:application \
+  --name $NAME \
+  --workers $NUM_WORKERS \
+  --user=$USER --group=$GROUP \
+  --bind=unix:$SOCKFILE \
+  --log-level=debug \
+  --log-file=-
+
+
+
+exit
+sudo chmod u+x /webapps/demo2/bin/gunicorn_start
+sudo su - demo2 
+source bin/activate
+bin/gunicorn_start
+exit
+
+sudo apt install python3-dev
+sudo su - demo2 
+source bin/activate
+ pip install setproctitle
+exit
+
+sudo apt install supervisor
+sudo nano /etc/supervisor/conf.d/demo2.conf
+
+
+[program:demo2]
+command = /webapps/demo2/bin/gunicorn_start                    ; Command to start app
+user = demo2                                                          ; User to run as
+stdout_logfile = /webapps/demo2/logs/gunicorn_supervisor.log   ; Where to write log messages
+redirect_stderr = true                                                ; Save stderr in the same log
+environment=LANG=en_US.UTF-8,LC_ALL=en_US.UTF-8                       ; Set UTF-8 as default encodin
+
+
+sudo su - demo2
+mkdir -p /webapps/demo2/logs/
+touch /webapps/demo2/logs/gunicorn_supervisor.log
+exit
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo supervisorctl status demo2
+
+
+
+sudo aptitude install nginx
+sudo service nginx start
+
+sudo nano /etc/nginx/sites-available/demo2
+ sudo ln -s /etc/nginx/sites-available/demo2 /etc/nginx/sites-enabled/demo2
+ sudo nginix -t
+sudo service nginx restart
+
+
+sudo service supervisor restart
+
+
+
+full link
+https://michal.karzynski.pl/blog/2013/06/09/django-nginx-gunicorn-virtualenv-supervisor/
