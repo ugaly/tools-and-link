@@ -1,0 +1,161 @@
+create django project mfano v3
+create app mfano main
+then
+pip install django
+pip install daphne
+pip install djangorestframework
+pip install djangorestframework-simplejwt
+pip install  channels
+pip iinstall django-channels-jwt-auth-middleware (optional)
+
+
+place in django settings make sure there are on top
+INSTALLED_APPS = [
+    'daphne',
+    'rest_framework',
+    'rest_framework_simplejwt',
+
+    ...
+    'main',	
+]
+
+
+also  place in setting
+ASGI_APPLICATION = 'v3.asgi.application'
+
+
+also
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',  # Use the in-memory channel layer for development
+    },
+}
+
+
+go settings/asgi.py make sure you modify main and v3 dependingi on your project and app name
+
+import main.routing
+import os
+
+from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.security.websocket import AllowedHostsOriginValidator
+from django_channels_jwt_auth_middleware.auth import JWTAuthMiddlewareStack
+from django.core.asgi import get_asgi_application
+
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'v3.settings')
+
+django_asgi_app = get_asgi_application()
+
+application = ProtocolTypeRouter({
+	'http': django_asgi_app,
+	'websocket': AllowedHostsOriginValidator(
+		JWTAuthMiddlewareStack(
+			URLRouter(main.routing.urlpatterns)
+		)
+	)
+})
+
+
+
+do to man create routing.py and consumer.py
+
+then
+#routing
+from django.urls import path
+
+urlpatterns = [
+	
+]
+
+
+sample
+from django.urls import path
+
+from main.consumer import ChatConsumer
+
+urlpatterns = [
+	path('ws/chat/', ChatConsumer.as_asgi()),
+	
+]
+
+#or
+from django.urls import path
+from . import consumers
+
+websocket_urlpatterns = [
+    path('ws/somepath/', consumers.MyConsumer.as_asgi()),
+]
+
+
+#consumer it where everything will be
+
+
+
+from channels.generic.websocket import AsyncWebsocketConsumer
+import json
+
+class ChatConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        # Accept the WebSocket connection
+        await self.accept()
+
+        # Add the client to the chat group
+        await self.channel_layer.group_add(
+            'chat_group',  # Group name
+            self.channel_name  # Channel name
+        )
+
+    async def disconnect(self, close_code):
+        # Remove the client from the chat group
+        await self.channel_layer.group_discard(
+            'chat_group',  # Group name
+            self.channel_name  # Channel name
+        )
+
+    async def receive(self, text_data):
+        # Parse the received JSON message
+        text_data_json = json.loads(text_data)
+        message = text_data_json.get('message', '')
+
+        # Broadcast the message to all clients in the chat group
+        await self.channel_layer.group_send(
+            'chat_group',  # Group name
+            {
+                'type': 'chat.message',
+                'message': message,
+            }
+        )
+
+    async def chat_message(self, event):
+        # Send the received message to the WebSocket client
+        message = event.get('message', '')
+        await self.send(text_data=json.dumps({
+            'message': message
+        }))
+
+
+
+
+
+
+
+lastly go to setting/url
+
+from django.contrib import admin
+from django.urls import path, include
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include('main.routing')),
+]
+
+
+
+
+
+for new project dont forget to set allowed host
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+or
+ALLOWED_HOSTS = ['*']
+
