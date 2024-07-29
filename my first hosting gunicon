@@ -133,3 +133,5 @@ sudo nano /etc/nginx.site-available/demoe
 
 full link
 https://michal.karzynski.pl/blog/2013/06/09/django-nginx-gunicorn-virtualenv-supervisor/
+
+https://certbot.eff.org/instructions?ws=nginx&os=ubuntufocal&tab=standard
