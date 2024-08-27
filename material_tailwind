@@ -1,0 +1,30 @@
+npx create-react-app my-app
+cd my-app
+npm install -D tailwindcss postcss autoprefixer
+
+npx tailwindcss init -p
+This will generate two files: tailwind.config.js and postcss.config.js.
+
+module.exports = {
+  content: [
+    "./src/**/*.{js,jsx,ts,tsx}",
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
+
+
+
+go to index.css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+npm install @mui/material @emotion/react @emotion/styled @mui/icons-material
+npm install @material-tailwind/react
+
+
+use new node version nvm use 20
