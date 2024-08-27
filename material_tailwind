@@ -27,4 +27,6 @@ npm install @mui/material @emotion/react @emotion/styled @mui/icons-material
 npm install @material-tailwind/react
 
 
+npm install react@latest react-dom@latest
+
 use new node version nvm use 20
