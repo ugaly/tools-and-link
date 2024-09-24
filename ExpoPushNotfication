@@ -1,0 +1,226 @@
+import { useState, useEffect, useRef } from 'react';
+import { Text, View, Button, Platform } from 'react-native';
+import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
+
+export default function App() {
+  const [expoPushToken, setExpoPushToken] = useState('');
+  const [channels, setChannels] = useState([]);
+  const [notification, setNotification] = useState(undefined);
+  const notificationListener = useRef();
+  const responseListener = useRef();
+
+  useEffect(() => {
+    registerForPushNotificationsAsync().then(token => token && setExpoPushToken(token));
+
+    if (Platform.OS === 'android') {
+      Notifications.getNotificationChannelsAsync().then(value => setChannels(value ?? []));
+    }
+    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+      setNotification(notification);
+    });
+
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log(response);
+    });
+
+    return () => {
+      notificationListener.current &&
+        Notifications.removeNotificationSubscription(notificationListener.current);
+      responseListener.current &&
+        Notifications.removeNotificationSubscription(responseListener.current);
+    };
+  }, []);
+
+  return (
+    <View
+      style={{
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'space-around',
+      }}>
+      <Text>Your expo push token: {expoPushToken}</Text>
+      <Text>{`Channels: ${JSON.stringify(
+        channels.map(c => c.id),
+        null,
+        2
+      )}`}</Text>
+      <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+        <Text>Title: {notification && notification.request.content.title} </Text>
+        <Text>Body: {notification && notification.request.content.body}</Text>
+        <Text>Data: {notification && JSON.stringify(notification.request.content.data)}</Text>
+      </View>
+      <Button
+        title="Press to schedule a notification"
+        onPress={async () => {
+          await schedulePushNotification();
+        }}
+      />
+    </View>
+  );
+}
+
+async function schedulePushNotification() {
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: "You've got mail! 📬",
+      body: 'Here is the notification body',
+      data: { data: 'goes here', test: { test1: 'more data' } },
+    },
+    trigger: { seconds: 2 },
+  });
+}
+
+async function registerForPushNotificationsAsync() {
+  let token;
+
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'default',
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF231F7C',
+    });
+  }
+
+  if (Device.isDevice) {
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== 'granted') {
+      alert('Failed to get push token for push notification!');
+      return;
+    }
+
+    try {
+      const projectId =
+        Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
+      if (!projectId) {
+        throw new Error('Project ID not found');
+      }
+      token = (
+        await Notifications.getExpoPushTokenAsync({
+          projectId,
+        })
+      ).data;
+      console.log(token);
+    } catch (e) {
+      token = `${e}`;
+    }
+  } else {
+    alert('Must use physical device for Push Notifications');
+  }
+
+  return token;
+}
+
+
+
+
+
+
+++++++++++++++++++++++++Python++++++++++++++++++++++++
+from exponent_server_sdk import (
+    DeviceNotRegisteredError,
+    PushClient,
+    PushMessage,
+    PushServerError,
+    PushTicketError,
+)
+import os
+import requests
+from requests.exceptions import ConnectionError, HTTPError
+
+# Set up an access token within a session (if push security is enabled)
+session = requests.Session()
+session.headers.update(
+    {
+        #"Authorization": f"Bearer {os.getenv('EXPO_TOKEN')}",   Optional, only if using push security
+        "accept": "application/json",
+        "accept-encoding": "gzip, deflate",
+        "content-type": "application/json",
+    }
+)
+
+# Function to send push message
+def send_push_message(token, message, extra=None):
+    try:
+        # Sending the push notification
+        response = PushClient(session=session).publish(
+            PushMessage(
+                to=token,
+                body=message,
+                data=extra
+            )
+        )
+    except PushServerError as exc:
+        # Error handling for issues with the Expo push server
+        print(f"PushServerError: {exc.errors}, {exc.response_data}")
+        raise
+    except (ConnectionError, HTTPError) as exc:
+        # Handle connection errors with retries (not implemented here)
+        print(f"Connection or HTTP error: {str(exc)}")
+        raise
+
+    try:
+        # Validate the response from Expo push service
+        response.validate_response()
+    except DeviceNotRegisteredError:
+        # Token is no longer valid, device unregistered
+        print(f"Device {token} is no longer registered.")
+        # Update database or token store to deactivate token (if needed)
+    except PushTicketError as exc:
+        # Handle individual push message errors
+        print(f"PushTicketError: {exc.push_response._asdict()}")
+        raise
+
+if __name__ == "__main__":
+    # Example token (replace with actual push token)
+    expo_push_token = "ExponentPushToken[_GVxv-POG9fYR-FcBrwZ7m]"
+
+    # Example message
+    message = "Woooow body"
+
+    # Optional data you want to send along with the notification
+    extra_data = {
+        "someData": "https://example.com"
+    }
+
+    # Sending the push notification
+    send_push_message(expo_push_token, "Woooow title", extra=extra_data)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+++++++++++++++++++++++++links===================
+https://docs.expo.dev/versions/latest/sdk/notifications/
+https://docs.expo.dev/push-notifications/push-notifications-setup/#ios
+https://docs.expo.dev/push-notifications/sending-notifications/
+https://github.com/expo-community/expo-server-sdk-python
