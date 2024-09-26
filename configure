@@ -1,0 +1,78 @@
+pip install celery
+sudo apt-get install redis-server
+sudo service redis-server start
+pip install redis
+
+# Channel layers configuration with celery
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('localhost', 6379, 1)],  # Use Redis DB 1 for Channels
+        },
+    },
+}
+
+# Celery configuration
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Broker for Celery tasks
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/1'  # Result backend for Celery tasks
+
+
+If you have Redis installed locally, you can start the Redis server by running:
+If you installed Redis using Docker, you can start a Redis container with:
+
+
+docker run -d -p 6379:6379 redis
+
+
+
+example
+version: '3'
+
+services:
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - celery
+    env_file:
+      - .env
+
+  celery:
+    build: .
+    command: celery -A your_project_name worker --loglevel=info
+    volumes:
+      - .:/code
+    depends_on:
+      - redis
+    env_file:
+      - .env
+
+  celery-beat:
+    build: .
+    command: celery -A your_project_name beat --loglevel=info
+    volumes:
+      - .:/code
+    depends_on:
+      - redis
+    env_file:
+      - .env
+
+
+
+Run the following command to check if Redis is already running:
+ps aux | grep redis
+
+redis-cli ping
+
+
